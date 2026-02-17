@@ -15,9 +15,11 @@ app.get("/api/study", (c) => {
 app.post("/api/study", async (c) => {
   const body = await c.req.json();
 
-  db.prepare("INSERT INTO study (id, subject) VALUES ( ?, ?)").run(
+  db.prepare("INSERT INTO study (id, subject, minutes, memo) VALUES ( ?, ?, ?, ?)").run(
     body.id,
     body.subject,
+    body.minutes,
+    body.memo
   );
 
   return c.json(body);
@@ -38,10 +40,10 @@ app.put("/api/study/:id", async (c) => {
   const body = await c.req.json();
 
   db.prepare(
-    "UPDATE study SET subject = ? where id = ?"
-  ).run(body.subject,id);
+    "UPDATE study SET subject = ?, minutes = ?, memo = ? where id = ?"
+  ).run(body.subject, body.minutes, body.memo, id);
 
-  return c.json({id,subject:body.subject});
+  return c.json(body);
 });
 
 serve({
