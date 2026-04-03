@@ -125,6 +125,49 @@ app.put("/api/study/:id", async (c) => {
   // return c.json(body);
 });
 
+app.get("/api/study/summary", async (c) => {
+  const supabase = c.get("supabase");
+  const span = c.req.query("span");
+  let res;
+  if(span==="day"){
+    res = await supabase.rpc("get_daily_summary");
+  }
+  else if(span==="week"){
+    res = await supabase.rpc("get_weekly_summary");
+  }
+  else if(span==="month"){
+    res = await supabase.rpc("get_monthly_summary");
+  }
+  else if(span==="year"){
+    res = await supabase.rpc("get_yearly_summary");
+  }
+  else if(!span){
+    return c.json({message:"span is required"}, 400);
+  }
+  if(res){
+    if(res.error){
+      return c.json({message: res.error.message}, 400)
+    }
+    else{
+      return c.json(res.data);
+    }
+  }
+})
+
+app.get("/api/study/subject_summary", async (c) => {
+  const supabase = c.get("supabase");
+  const start_date = c.req.query("start_date")
+  const end_date = c.req.query("end_date")
+  const {data, error} = await supabase.rpc("get_subject_summary", {
+    start_date:start_date,
+    end_date:end_date
+  })
+  if(error){
+    return c.json({message:error.message}, 400)
+  }
+  return c.json(data);
+})
+
 serve({
   fetch: app.fetch,
   port: 3000,
