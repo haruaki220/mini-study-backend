@@ -36,8 +36,6 @@ app.get("/api/study", async (c) => {
   if (error) {
     return c.json({ message: error.message }, 400);
   }
-
-  console.log(data);
   return c.json(data);
 
   // const result = await db.query("SELECT * FROM study_records");
@@ -86,7 +84,6 @@ app.delete("/api/study/:id", async (c) => {
   if (error) {
     return c.json({ message: error.message }, 400);
   }
-  console.log(data);
   return c.json(data);
   // await db.query("DELETE FROM study_records WHERE id = $1", [id]);
 
