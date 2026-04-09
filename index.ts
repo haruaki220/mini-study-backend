@@ -9,7 +9,7 @@ const app = new Hono<Env>();
 
 console.log("URL:", process.env.SUPABASE_URL);
 
-app.use("*", cors());
+app.use("*", cors({origin:["http://localhost:5173","https://mini-study-app.vercel.app"]}));
 
 app.use("/api/*", async (c, next) => {
   const reqHeader = c.req.header("Authorization");
