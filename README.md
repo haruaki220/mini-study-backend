@@ -94,7 +94,7 @@ https://mini-study-backend.onrender.com
 
 ### GET /api/study/summary
 
-指定した期間単位で学習時間の合計を集計したデータを取得します。
+指定した期間単位で学習時間の合計を集計したデータを取得
 
 #### クエリパラメータ
 
