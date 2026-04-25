@@ -7,10 +7,9 @@ import type { Env } from "./types.ts";
 
 const app = new Hono<Env>();
 
-console.log("URL:", process.env.SUPABASE_URL);
+app.use("*", cors({origin: ["http://localhost:5173", "https://mini-study-app.vercel.app"],}),);
 
-app.use("*", cors({origin:["http://localhost:5173","https://mini-study-app.vercel.app"]}));
-
+// ミドルウェア
 app.use("/api/*", async (c, next) => {
   const reqHeader = c.req.header("Authorization");
   if (!reqHeader) {
@@ -29,19 +28,21 @@ app.use("/api/*", async (c, next) => {
   await next();
 });
 
+// 学習記録一覧を取得
 app.get("/api/study", async (c) => {
   const supabase = c.get("supabase");
 
-  const { data, error } = await supabase.from("study_records").select("*");
+  const { data, error } = await supabase
+    .from("study_records")
+    .select("id, subject, minutes, memo, created_at")
+    .order("created_at",{ascending:false});
   if (error) {
     return c.json({ message: error.message }, 400);
   }
   return c.json(data);
-
-  // const result = await db.query("SELECT * FROM study_records");
-  // return c.json(result.rows);
 });
 
+// 学習記録を追加
 app.post("/api/study", async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
@@ -63,13 +64,9 @@ app.post("/api/study", async (c) => {
   }
 
   return c.json(data);
-  // await db.query("INSERT INTO study_records (subject, minutes, memo) VALUES ( $1, $2, $3 )",
-  //   [body.subject, body.minutes, body.memo]
-  // );
-
-  // return c.json(body);
 });
 
+// 学習記録を削除
 app.delete("/api/study/:id", async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
@@ -79,17 +76,15 @@ app.delete("/api/study/:id", async (c) => {
     .from("study_records")
     .delete()
     .eq("id", id)
-    .eq("user_id",user.id);
+    .eq("user_id", user.id);
 
   if (error) {
     return c.json({ message: error.message }, 400);
   }
   return c.json(data);
-  // await db.query("DELETE FROM study_records WHERE id = $1", [id]);
-
-  // return c.json({ message: "Deleted" });
 });
 
+// 学習記録を編集
 app.put("/api/study/:id", async (c) => {
   const supabase = c.get("supabase");
   const user = c.get("user");
@@ -106,65 +101,56 @@ app.put("/api/study/:id", async (c) => {
       user_id: user.id,
     })
     .eq("id", id)
-    .eq("user_id",user.id)
+    .eq("user_id", user.id);
 
   if (error) {
     return c.json({ message: error.message }, 400);
   }
 
   return c.json(data);
-
-  // await db.query(
-  //   "UPDATE study_records SET subject = $1, minutes = $2, memo = $3 where id = $4",
-  //   [body.subject, body.minutes, body.memo, id],
-  // );
-
-  // return c.json(body);
 });
 
+// 指定した期間単位で学習時間の合計を集計したデータを取得
 app.get("/api/study/summary", async (c) => {
   const supabase = c.get("supabase");
   const span = c.req.query("span");
   let res;
-  if(span==="day"){
+  if (span === "day") {
     res = await supabase.rpc("get_daily_summary");
-  }
-  else if(span==="week"){
+  } else if (span === "week") {
     res = await supabase.rpc("get_weekly_summary");
-  }
-  else if(span==="month"){
+  } else if (span === "month") {
     res = await supabase.rpc("get_monthly_summary");
-  }
-  else if(span==="year"){
+  } else if (span === "year") {
     res = await supabase.rpc("get_yearly_summary");
+  } else if (!span) {
+    return c.json({ message: "span is required" }, 400);
   }
-  else if(!span){
-    return c.json({message:"span is required"}, 400);
-  }
-  if(res){
-    if(res.error){
-      return c.json({message: res.error.message}, 400)
-    }
-    else{
+  if (res) {
+    if (res.error) {
+      return c.json({ message: res.error.message }, 400);
+    } else {
       return c.json(res.data);
     }
   }
-})
+});
 
+// 指定した期間の教科別学習時間を取得
 app.get("/api/study/subject_summary", async (c) => {
   const supabase = c.get("supabase");
-  const start_date = c.req.query("start_date")
-  const end_date = c.req.query("end_date")
-  const {data, error} = await supabase.rpc("get_subject_summary", {
-    start_date:start_date,
-    end_date:end_date
-  })
-  if(error){
-    return c.json({message:error.message}, 400)
+  const start_date = c.req.query("start_date");
+  const end_date = c.req.query("end_date");
+  const { data, error } = await supabase.rpc("get_subject_summary", {
+    start_date: start_date,
+    end_date: end_date,
+  });
+  if (error) {
+    return c.json({ message: error.message }, 400);
   }
   return c.json(data);
-})
+});
 
+//サーバーを起動
 serve({
   fetch: app.fetch,
   port: 3000,
